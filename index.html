@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market Pulse — 日本株ニュース</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f2ec; --s1:#fdfbf7; --s2:#f0ede6; --s3:#e8e4dc;
+  --border:rgba(0,0,0,0.08); --border2:rgba(0,0,0,0.16);
+  --accent:#007a62; --acc2:#c0392b; --acc3:#2563a8;
+  --text:#1a1a18; --muted:#7a7468;
+  --mono:'Space Mono',monospace; --sans:'Noto Sans JP',sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
+.app{max-width:900px;margin:0 auto;padding:16px}
+.hdr{display:flex;align-items:center;justify-content:space-between;padding-bottom:12px;border-bottom:1px solid var(--border);margin-bottom:13px;gap:8px;flex-wrap:wrap}
+.logo{font-family:var(--mono);font-size:14px;letter-spacing:.18em;color:var(--accent)}
+.logo em{color:var(--muted);font-style:normal}
+.hdr-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:blink 2s infinite;flex-shrink:0}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.hdr-status{font-family:var(--mono);font-size:10px;color:var(--muted)}
+.hdr-btn{font-family:var(--mono);font-size:10px;padding:5px 14px;background:transparent;border:1px solid var(--border2);color:var(--text);border-radius:3px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.hdr-btn:hover{background:var(--s2);border-color:var(--accent);color:var(--accent)}
+.hdr-btn:disabled{opacity:.35;pointer-events:none}
+.hdr-btn.primary{border-color:var(--accent);color:var(--accent)}
+.hdr-btn.primary:hover{background:rgba(0,122,98,.08)}
+.ticker-wrap{background:var(--s1);border:1px solid var(--border);padding:6px 0;margin-bottom:13px;overflow:hidden}
+.ticker-inner{display:flex;gap:26px;white-space:nowrap;font-family:var(--mono);font-size:11px;animation:scroll 40s linear infinite}
+@keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.ti{display:flex;gap:6px}
+.ti-n{color:var(--muted)}.ti-v{color:var(--text)}.ti-u{color:var(--accent)}.ti-d{color:var(--acc2)}
+.source-legend{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:13px;padding:8px 12px;background:var(--s1);border:1px solid var(--border);border-radius:3px;align-items:center}
+.legend-item{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:2px}
+.legend-note{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--muted)}
+.tabs-wrap{overflow-x:auto;scrollbar-width:none}
+.tabs-wrap::-webkit-scrollbar{display:none}
+.tabs{display:flex;border-bottom:1px solid var(--border);min-width:max-content}
+.tab{font-family:var(--mono);font-size:11px;padding:9px 13px;background:transparent;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;color:var(--muted);cursor:pointer;transition:color .15s,border-color .15s;white-space:nowrap;letter-spacing:.02em}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-badge{display:inline-block;font-size:9px;padding:1px 5px;border-radius:10px;margin-left:4px;background:var(--s2);color:var(--muted);vertical-align:middle;min-width:16px;text-align:center;border:1px solid var(--border)}
+.tab.active .tab-badge{background:rgba(0,122,98,.1);color:var(--accent);border-color:rgba(0,122,98,.2)}
+.panel{display:none}.panel.active{display:block}
+.sector-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 0 10px;gap:8px;flex-wrap:wrap}
+.sector-left{display:flex;align-items:center;gap:10px}
+.sector-icon{font-size:16px}
+.sector-name{font-size:15px;font-weight:500}
+.sector-sub{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px}
+.sector-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.stat-bull{font-family:var(--mono);font-size:11px;color:var(--accent)}
+.stat-bear{font-family:var(--mono);font-size:11px;color:var(--acc2)}
+.auto-badge{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:2px;background:rgba(0,122,98,.08);color:var(--accent);border:1px solid rgba(0,122,98,.18)}
+.tab-refresh{font-family:var(--mono);font-size:9px;padding:4px 11px;background:transparent;border:1px solid var(--border2);color:var(--muted);border-radius:2px;cursor:pointer;transition:all .15s}
+.tab-refresh:hover{color:var(--accent);border-color:var(--accent)}
+.tab-refresh:disabled{opacity:.3;pointer-events:none}
+.feed{display:flex;flex-direction:column;gap:1px;max-height:540px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--s3) transparent}
+.feed::-webkit-scrollbar{width:3px}
+.feed::-webkit-scrollbar-thumb{background:var(--s3)}
+.ncard{background:var(--s1);border:1px solid var(--border);padding:12px 14px;position:relative;transition:border-color .15s,background .15s;cursor:pointer;text-decoration:none;display:block;color:inherit}
+.ncard:hover{border-color:var(--border2);background:#fffdf9}
+.ncard.new-card{animation:slideIn .35s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.nc-bar{position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
+.nc-top{display:flex;gap:8px;align-items:flex-start;margin-bottom:5px}
+.src-badge{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:2px;white-space:nowrap;flex-shrink:0;margin-top:2px}
+.s-nikkei  {background:rgba(192,57,43,.08);color:#a02828;border:1px solid rgba(192,57,43,.2)}
+.s-bloomberg{background:rgba(0,122,98,.08);color:#006652;border:1px solid rgba(0,122,98,.2)}
+.s-reuters {background:rgba(37,99,168,.08);color:#1a5490;border:1px solid rgba(37,99,168,.2)}
+.s-toyo    {background:rgba(176,125,0,.08);color:#8a6200;border:1px solid rgba(176,125,0,.2)}
+.s-minkab  {background:rgba(0,140,200,.08);color:#006fa0;border:1px solid rgba(0,140,200,.2)}
+.s-kabutan {background:rgba(0,140,200,.08);color:#006fa0;border:1px solid rgba(0,140,200,.2)}
+.s-nhk     {background:rgba(80,80,80,.07);color:#444;border:1px solid rgba(80,80,80,.18)}
+.s-jiji    {background:rgba(140,20,20,.08);color:#8c1414;border:1px solid rgba(140,20,20,.2)}
+.s-kyodo   {background:rgba(160,40,0,.08);color:#902800;border:1px solid rgba(160,40,0,.2)}
+.s-asahi   {background:rgba(180,50,50,.08);color:#8b2020;border:1px solid rgba(180,50,50,.2)}
+.s-yomiuri {background:rgba(0,60,140,.08);color:#003c8c;border:1px solid rgba(0,60,140,.2)}
+.s-mainichi{background:rgba(0,100,60,.08);color:#00643c;border:1px solid rgba(0,100,60,.2)}
+.s-sankei  {background:rgba(100,60,160,.08);color:#643ca0;border:1px solid rgba(100,60,160,.2)}
+.s-tbs     {background:rgba(200,0,60,.08);color:#c0003c;border:1px solid rgba(200,0,60,.2)}
+.s-tvtokyo {background:rgba(160,80,0,.08);color:#a05000;border:1px solid rgba(160,80,0,.2)}
+.s-other   {background:rgba(80,80,80,.07);color:#555;border:1px solid rgba(80,80,80,.16)}
+.nc-title{font-size:13px;font-weight:500;line-height:1.55;color:var(--text)}
+.nc-meta{display:flex;gap:8px;align-items:center;font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:5px;flex-wrap:wrap}
+.imp-pill{font-weight:700;padding:1px 7px;border-radius:2px;font-size:10px}
+.imp-bull{color:#006652;background:rgba(0,122,98,.1);border:1px solid rgba(0,122,98,.15)}
+.imp-bear{color:#a02828;background:rgba(192,57,43,.1);border:1px solid rgba(192,57,43,.15)}
+.imp-neu {color:#1a5490;background:rgba(37,99,168,.1);border:1px solid rgba(37,99,168,.15)}
+.nc-summary{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.65}
+.feed-loading{padding:40px;text-align:center}
+.spin{width:28px;height:28px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite;margin:0 auto 12px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.spin-label{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.feed-empty{padding:40px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--muted);line-height:2.2}
+.feed-err{background:rgba(192,57,43,.05);border:1px solid rgba(192,57,43,.15);padding:14px 16px;border-radius:3px;font-family:var(--mono);font-size:11px;color:#a02828;line-height:2}
+.retry-btn{margin-top:10px;font-family:var(--mono);font-size:11px;padding:5px 14px;background:transparent;border:1px solid rgba(192,57,43,.3);color:#a02828;border-radius:3px;cursor:pointer}
+.retry-btn:hover{background:rgba(192,57,43,.07)}
+.next-update{font-family:var(--mono);font-size:10px;color:var(--muted);text-align:right;padding:5px 2px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="hdr">
+    <div class="logo">MARKET<em>//</em>PULSE</div>
+    <div class="hdr-right">
+      <span class="live-dot"></span>
+      <span class="hdr-status" id="hdrStatus">READY</span>
+      <button class="hdr-btn primary" id="refreshAllBtn" onclick="refreshAll()">↺ 全セクター更新</button>
+    </div>
+  </div>
+
+  <div class="ticker-wrap">
+    <div class="ticker-inner">
+      <span class="ti"><span class="ti-n">日経225</span><span class="ti-v">—</span></span>
+      <span class="ti"><span class="ti-n">TOPIX</span><span class="ti-v">—</span></span>
+      <span class="ti"><span class="ti-n">USD/JPY</span><span class="ti-v">—</span></span>
+      <span class="ti"><span class="ti-n">S&P500</span><span class="ti-v">—</span></span>
+      <span class="ti"><span class="ti-n">NASDAQ</span><span class="ti-v">—</span></span>
+      <span class="ti"><span class="ti-n">BTC</span><span class="ti-v" id="tk-btc">—</span></span>
+      <span class="ti"><span class="ti-n">WTI原油</span><span class="ti-v">—</span></span>
+      <span class="ti"><span class="ti-n">金(oz)</span><span class="ti-v">—</span></span>
+      <span class="ti"><span class="ti-n">日経225</span><span class="ti-v">—</span></span>
+      <span class="ti"><span class="ti-n">TOPIX</span><span class="ti-v">—</span></span>
+      <span class="ti"><span class="ti-n">USD/JPY</span><span class="ti-v">—</span></span>
+      <span class="ti"><span class="ti-n">S&P500</span><span class="ti-v">—</span></span>
+      <span class="ti"><span class="ti-n">NASDAQ</span><span class="ti-v">—</span></span>
+      <span class="ti"><span class="ti-n">BTC</span><span class="ti-v" id="tk-btc2">—</span></span>
+      <span class="ti"><span class="ti-n">WTI原油</span><span class="ti-v">—</span></span>
+      <span class="ti"><span class="ti-n">金(oz)</span><span class="ti-v">—</span></span>
+    </div>
+  </div>
+
+  <div class="source-legend">
+    <span class="legend-item s-jiji">時事通信</span>
+    <span class="legend-item s-kyodo">共同通信</span>
+    <span class="legend-item s-nikkei">日経新聞</span>
+    <span class="legend-item s-asahi">朝日新聞</span>
+    <span class="legend-item s-yomiuri">読売新聞</span>
+    <span class="legend-item s-mainichi">毎日新聞</span>
+    <span class="legend-item s-sankei">産経新聞</span>
+    <span class="legend-item s-nhk">NHK</span>
+    <span class="legend-item s-tbs">TBS</span>
+    <span class="legend-item s-tvtokyo">テレ東</span>
+    <span class="legend-item s-bloomberg">Bloomberg</span>
+    <span class="legend-item s-reuters">Reuters</span>
+    <span class="legend-item s-toyo">東洋経済</span>
+    <span class="legend-item s-minkab">みんかぶ</span>
+    <span class="legend-item s-kabutan">株探</span>
+    <span class="legend-note">APIキー不要 — RSS直接取得</span>
+  </div>
+
+  <div class="tabs-wrap"><div class="tabs" id="tabs"></div></div>
+  <div id="panels"></div>
+</div>
+
+<script>
+// ─── RSSフィード定義 ───────────────────────────────
+const RSS_FEEDS = [
+  // 通信社（一次情報・最速）
+  { id:'jiji',      label:'時事通信',  url:'https://www.jiji.com/rss/ranking.rdf' },
+  { id:'kyodo',     label:'共同通信',  url:'https://nordot.app/rss/ch/10097686816991232/articles' },
+  // 全国紙
+  { id:'nikkei',    label:'日経',      url:'https://www.nikkei.com/rss/all.rdf' },
+  { id:'asahi',     label:'朝日新聞',  url:'https://www.asahi.com/rss/asahi/newsheadlines.rdf' },
+  { id:'yomiuri',   label:'読売新聞',  url:'https://www.yomiuri.co.jp/media/2019/rss/rss50_latest.xml' },
+  { id:'mainichi',  label:'毎日新聞',  url:'https://mainichi.jp/rss/etc/mainichi-flash.rss' },
+  { id:'sankei',    label:'産経新聞',  url:'https://www.sankei.com/economy/rss.xml' },
+  // 放送局系
+  { id:'nhk',       label:'NHK',       url:'https://www3.nhk.or.jp/rss/news/cat6.xml' },
+  { id:'tbs',       label:'TBS',       url:'https://newsdig.tbs.co.jp/rss' },
+  { id:'tvtokyo',   label:'テレ東WBS', url:'https://www.tv-tokyo.co.jp/rss/wbs.xml' },
+  // 経済・金融専門
+  { id:'bloomberg', label:'Bloomberg', url:'https://feeds.bloomberg.com/japan/news.rss' },
+  { id:'reuters',   label:'Reuters',   url:'https://feeds.reuters.com/reuters/JPBusinessNews' },
+  { id:'toyo',      label:'東洋経済',  url:'https://toyokeizai.net/list/feed/rss' },
+  { id:'minkab',    label:'みんかぶ',  url:'https://minkabu.jp/news/rss' },
+  { id:'kabutan',   label:'株探',      url:'https://kabutan.jp/rss/news' },
+];
+
+// CORSプロキシ（複数用意して障害時にフォールバック）
+const PROXIES = [
+  u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
+  u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+  u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+];
+
+// ─── セクター定義 ──────────────────────────────────
+const SECTORS = [
+  { id:'ai',     icon:'⚡', name:'AI・半導体',     sub:'東京エレク・ルネサス・NVDA関連',
+    kw:['AI','人工知能','半導体','NVIDIA','エヌビディア','東京エレクトロン','ルネサス','TSMC','GPU','生成AI','ソフトバンクグループ','ARM','deepseek'] },
+  { id:'mfg',    icon:'⚙',  name:'製造・重工業',   sub:'トヨタ・三菱重工・川崎重工',
+    kw:['トヨタ','三菱重工','川崎重工','IHI','造船','防衛','航空','自動車','ホンダ','日産','マツダ','スバル','EV','電気自動車'] },
+  { id:'elec',   icon:'💻', name:'電機・IT',       sub:'ソニー・日立・富士通',
+    kw:['ソニー','日立','富士通','パナソニック','NEC','東芝','シャープ','キヤノン','電機','家電','クラウド','DX','デジタル'] },
+  { id:'fin',    icon:'🏦', name:'金融・銀行・保険', sub:'三菱UFJ・野村・東京海上',
+    kw:['三菱UFJ','みずほ','三井住友','野村','大和証券','東京海上','第一生命','日銀','金利','銀行','保険','証券','金融政策','利上げ'] },
+  { id:'retail', icon:'🛒', name:'小売・消費財',    sub:'ファーストリテイリング・ニトリ',
+    kw:['ファーストリテイリング','ユニクロ','ニトリ','セブン','イオン','ローソン','ファミリーマート','小売','消費','百貨店'] },
+  { id:'med',    icon:'💊', name:'医療・製薬',      sub:'武田薬品・エーザイ・アステラス',
+    kw:['武田薬品','エーザイ','アステラス','第一三共','中外製薬','塩野義','医療','製薬','バイオ','医薬品','厚労省','FDA'] },
+  { id:'infra',  icon:'📡', name:'通信・インフラ',  sub:'NTT・ソフトバンク・KDDI',
+    kw:['NTT','ソフトバンク','KDDI','楽天モバイル','5G','通信','電力','東京電力','関西電力','鉄道','JR','インフラ'] },
+  { id:'re',     icon:'🏗',  name:'不動産・建設',   sub:'三井不動産・大成建設',
+    kw:['三井不動産','住友不動産','三菱地所','大成建設','鹿島','清水建設','不動産','建設','住宅','マンション','REIT','地価'] },
+  { id:'energy', icon:'⛽', name:'エネルギー・素材', sub:'ENEOS・住友化学・JFE',
+    kw:['ENEOS','出光','コスモ','住友化学','JFE','日本製鉄','原油','LNG','石油','鉄鋼','化学','素材','資源','レアメタル'] },
+];
+
+const BULL_W = ['上昇','急騰','最高値','増益','好調','上方修正','黒字','増収','増配','回復','買い','強気','成長','最高益','急伸'];
+const BEAR_W = ['下落','急落','最安値','減益','不振','下方修正','赤字','減収','減配','悪化','売り','弱気','後退','縮小','赤字転落'];
+
+const AUTO_REFRESH_MS = 15 * 60 * 1000;
+const INJECT_MS       = 28 * 1000;
+
+// ─── State ────────────────────────────────────────
+const state = {};
+SECTORS.forEach(s => {
+  state[s.id] = { loaded:false, loading:false, items:[], feedTimer:null, autoTimer:null, tickTimer:null, nextUpdate:null };
+});
+let activeTab   = SECTORS[0].id;
+let allRssCache = [];
+let cacheTime   = 0;
+const CACHE_TTL = 10 * 60 * 1000;
+
+// ─── RSS取得 ──────────────────────────────────────
+async function fetchRSS(feed) {
+  for (const makeURL of PROXIES) {
+    try {
+      const res = await fetch(makeURL(feed.url), { signal: AbortSignal.timeout(9000) });
+      if (!res.ok) continue;
+      // allorigins は JSON {contents:...}、他は生テキスト
+      let xml;
+      const ct = res.headers.get('content-type') || '';
+      if (ct.includes('json')) {
+        const j = await res.json();
+        xml = j.contents || j;
+      } else {
+        xml = await res.text();
+      }
+      if (typeof xml !== 'string' || xml.length < 100) continue;
+      const items = parseXML(xml, feed);
+      if (items.length > 0) return items;
+    } catch { continue; }
+  }
+  console.warn(`RSS取得失敗: ${feed.id}`);
+  return [];
+}
+
+function parseXML(xml, feed) {
+  try {
+    const doc   = new DOMParser().parseFromString(xml, 'text/xml');
+    const items = [];
+    const push  = (title, link, desc, pubDate) => {
+      if (!title) return;
+      items.push({
+        title:   title.trim(),
+        link:    link.trim(),
+        desc:    stripTags(desc).slice(0, 130),
+        pubDate: pubDate.trim(),
+        source:  feed.id,
+        label:   feed.label,
+      });
+    };
+    // RSS 2.0 / RDF
+    doc.querySelectorAll('item').forEach(el => {
+      push(
+        el.querySelector('title')?.textContent || '',
+        el.querySelector('link')?.textContent || el.querySelector('link')?.getAttribute('href') || '',
+        el.querySelector('description')?.textContent || el.querySelector('summary')?.textContent || '',
+        el.querySelector('pubDate')?.textContent || el.querySelector('date')?.textContent || el.querySelector('updated')?.textContent || ''
+      );
+    });
+    // Atom
+    if (!items.length) {
+      doc.querySelectorAll('entry').forEach(el => {
+        push(
+          el.querySelector('title')?.textContent || '',
+          el.querySelector('link')?.getAttribute('href') || '',
+          el.querySelector('summary')?.textContent || el.querySelector('content')?.textContent || '',
+          el.querySelector('published')?.textContent || el.querySelector('updated')?.textContent || ''
+        );
+      });
+    }
+    return items.slice(0, 25);
+  } catch { return []; }
+}
+
+function stripTags(s) {
+  return s.replace(/<[^>]+>/g,'').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').replace(/&#\d+;/g,'').trim();
+}
+
+// ─── ユーティリティ ───────────────────────────────
+function sentiment(text) {
+  const b = BULL_W.filter(w => text.includes(w)).length;
+  const d = BEAR_W.filter(w => text.includes(w)).length;
+  return b > d ? 'bull' : d > b ? 'bear' : 'neutral';
+}
+
+function relTime(str) {
+  if (!str) return '';
+  const d = new Date(str);
+  if (isNaN(d)) return '';
+  const s = (Date.now() - d.getTime()) / 1000;
+  if (s < 60)    return `${Math.floor(s)}秒前`;
+  if (s < 3600)  return `${Math.floor(s / 60)}分前`;
+  if (s < 86400) return `${Math.floor(s / 3600)}時間前`;
+  return `${Math.floor(s / 86400)}日前`;
+}
+
+function matchesSector(item, kw) {
+  const t = (item.title + ' ' + item.desc).toLowerCase();
+  return kw.some(k => t.includes(k.toLowerCase()));
+}
+
+// ─── Build DOM ────────────────────────────────────
+function buildUI() {
+  const tabsEl   = document.getElementById('tabs');
+  const panelsEl = document.getElementById('panels');
+  SECTORS.forEach((sec, i) => {
+    const t = document.createElement('button');
+    t.className = 'tab' + (i === 0 ? ' active' : '');
+    t.id = `tab-${sec.id}`;
+    t.innerHTML = `${sec.icon} ${sec.name}<span class="tab-badge" id="badge-${sec.id}">—</span>`;
+    t.onclick = () => switchTab(sec.id);
+    tabsEl.appendChild(t);
+
+    const p = document.createElement('div');
+    p.className = 'panel' + (i === 0 ? ' active' : '');
+    p.id = `panel-${sec.id}`;
+    p.innerHTML = `
+      <div class="sector-hdr">
+        <div class="sector-left">
+          <span class="sector-icon">${sec.icon}</span>
+          <div><div class="sector-name">${sec.name}</div><div class="sector-sub">${sec.sub}</div></div>
+        </div>
+        <div class="sector-right">
+          <span class="stat-bull" id="bull-${sec.id}">▲ —</span>
+          <span class="stat-bear" id="bear-${sec.id}">▼ —</span>
+          <span class="auto-badge">AUTO 15min</span>
+          <button class="tab-refresh" id="tabRefresh-${sec.id}" onclick="tabRefresh('${sec.id}')">↺ 更新</button>
+        </div>
+      </div>
+      <div class="feed" id="feed-${sec.id}">
+        <div class="feed-loading"><div class="spin"></div><div class="spin-label">待機中...</div></div>
+      </div>
+      <div class="next-update" id="nextUpdate-${sec.id}"></div>`;
+    panelsEl.appendChild(p);
+  });
+}
+
+function switchTab(id) {
+  activeTab = id;
+  document.querySelectorAll('.tab').forEach(t  => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`tab-${id}`).classList.add('active');
+  document.getElementById(`panel-${id}`).classList.add('active');
+  if (!state[id].loaded && !state[id].loading) loadSector(id);
+}
+
+// ─── Load ─────────────────────────────────────────
+async function getAllRSS(force = false) {
+  if (!force && allRssCache.length && (Date.now() - cacheTime) < CACHE_TTL) return allRssCache;
+  const results = await Promise.all(RSS_FEEDS.map(f => fetchRSS(f)));
+
+  // 重複除去：タイトル正規化（記号・空白除去）でキー生成
+  const seen = new Set();
+  const deduped = [];
+  for (const item of results.flat()) {
+    // タイトルから記号・空白を除いた文字列をキーにする（表記ゆれにも対応）
+    const key = item.title.replace(/[\s\u3000\|｜「」【】『』\-\.\,\/]/g, '').slice(0, 40);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(item);
+  }
+
+  // 日付パース → 新しい順ソート（日付不明は末尾へ）
+  allRssCache = deduped.sort((a, b) => {
+    const da = a.pubDate ? new Date(a.pubDate).getTime() : 0;
+    const db = b.pubDate ? new Date(b.pubDate).getTime() : 0;
+    return db - da;
+  });
+  cacheTime = Date.now();
+  return allRssCache;
+}
+
+async function loadSector(id, force = false) {
+  if (state[id].loading) return;
+  state[id].loading = true;
+  const sec    = SECTORS.find(s => s.id === id);
+  const feedEl = document.getElementById(`feed-${id}`);
+  const btn    = document.getElementById(`tabRefresh-${id}`);
+  if (btn) btn.disabled = true;
+  feedEl.innerHTML = `<div class="feed-loading"><div class="spin"></div><div class="spin-label">${sec.name}のニュースを収集中...</div></div>`;
+  document.getElementById('hdrStatus').textContent = 'FETCHING';
+
+  try {
+    const all   = await getAllRSS(force);
+    const seen2 = new Set();
+    const items = all
+      .filter(item => {
+        if (!matchesSector(item, sec.kw)) return false;
+        const key = item.title.replace(/[\s\u3000\|｜「」【】『』\-\.\,\/]/g, '').slice(0, 40);
+        if (seen2.has(key)) return false;
+        seen2.add(key);
+        return true;
+      })
+      .slice(0, 30)
+      .map(item => ({ ...item, impact: sentiment(item.title + ' ' + item.desc), time: relTime(item.pubDate) }));
+
+    state[id].items  = items;
+    state[id].loaded = true;
+    renderFeed(id);
+    scheduleAutoRefresh(id);
+    startInject(id);
+  } catch (e) {
+    feedEl.innerHTML = `
+      <div class="feed-err">
+        // ERROR: ${e.message}<br>
+        ネットワーク接続を確認するか、しばらくしてから再試行してください。
+        <br><button class="retry-btn" onclick="tabRefresh('${id}')">↺ 再試行</button>
+      </div>`;
+  }
+  state[id].loading = false;
+  if (btn) btn.disabled = false;
+  updateStatus();
+}
+
+function tabRefresh(id) {
+  clearTimers(id);
+  state[id].loaded = false;
+  cacheTime = 0;
+  loadSector(id, true);
+}
+
+async function refreshAll() {
+  const btn = document.getElementById('refreshAllBtn');
+  btn.disabled = true; btn.textContent = '更新中...';
+  cacheTime = 0;
+  SECTORS.forEach(s => clearTimers(s.id));
+  document.getElementById('hdrStatus').textContent = 'FETCHING';
+  await getAllRSS(true);
+  for (const sec of SECTORS) { state[sec.id].loaded = false; await loadSector(sec.id); }
+  btn.disabled = false; btn.textContent = '↺ 全セクター更新';
+}
+
+// ─── Render ───────────────────────────────────────
+function renderFeed(id) {
+  const items = state[id].items;
+  const bull  = items.filter(i => i.impact === 'bull').length;
+  const bear  = items.filter(i => i.impact === 'bear').length;
+  document.getElementById(`badge-${id}`).textContent = items.length || '0';
+  document.getElementById(`bull-${id}`).textContent  = `▲ ${bull}`;
+  document.getElementById(`bear-${id}`).textContent  = `▼ ${bear}`;
+
+  const feedEl = document.getElementById(`feed-${id}`);
+  if (!items.length) {
+    feedEl.innerHTML = '<div class="feed-empty">// 現在このセクターの関連ニュースはありません<br>「↺ 更新」で再取得できます</div>';
+    return;
+  }
+  feedEl.innerHTML = '';
+  items.forEach(item => feedEl.appendChild(makeCard(item, false)));
+}
+
+function makeCard(item, isNew) {
+  const cls = 's-' + (item.source || 'other');
+  const ac  = item.impact === 'bull' ? 'var(--accent)' : item.impact === 'bear' ? 'var(--acc2)' : 'var(--acc3)';
+  const ic  = item.impact === 'bull' ? 'imp-bull' : item.impact === 'bear' ? 'imp-bear' : 'imp-neu';
+  const il  = item.impact === 'bull' ? '▲ 強気' : item.impact === 'bear' ? '▼ 弱気' : '→ 中立';
+  const a   = document.createElement('a');
+  a.className = 'ncard' + (isNew ? ' new-card' : '');
+  a.href   = item.link || '#';
+  a.target = '_blank';
+  a.rel    = 'noopener noreferrer';
+  a.innerHTML = `
+    <div class="nc-bar" style="background:${ac}"></div>
+    <div class="nc-top">
+      <span class="src-badge ${cls}">${item.label}</span>
+      <span class="nc-title">${item.title}</span>
+    </div>
+    <div class="nc-meta">
+      <span class="imp-pill ${ic}">${il}</span>
+      ${item.time ? `<span>${item.time}</span>` : ''}
+    </div>
+    ${item.desc ? `<div class="nc-summary">${item.desc}</div>` : ''}`;
+  return a;
+}
+
+// ─── Auto inject / refresh ────────────────────────
+function startInject(id) {
+  if (state[id].feedTimer) clearInterval(state[id].feedTimer);
+  state[id].feedTimer = setInterval(() => {
+    const items = state[id].items;
+    if (!items.length) return;
+    const feedEl = document.getElementById(`feed-${id}`);
+    // 現在表示中のタイトルを収集して重複チェック
+    const visibleTitles = new Set(
+      [...feedEl.querySelectorAll('.nc-title')].map(el =>
+        el.textContent.replace(/[\s\u3000\|｜「」【】『』\-\.\,\/]/g,'').slice(0,40)
+      )
+    );
+    // 未表示の記事からランダムに選ぶ
+    const candidates = items.filter(item => {
+      const key = item.title.replace(/[\s\u3000\|｜「」【】『』\-\.\,\/]/g,'').slice(0,40);
+      return !visibleTitles.has(key);
+    });
+    if (!candidates.length) return; // 新記事なし → 挿入しない
+    const item = candidates[Math.floor(Math.random() * candidates.length)];
+    feedEl.insertBefore(makeCard(item, true), feedEl.firstChild);
+    const badge = document.getElementById(`badge-${id}`);
+    badge.textContent = (parseInt(badge.textContent) || 0) + 1;
+    const cards = feedEl.querySelectorAll('.ncard');
+    if (cards.length > 40) cards[cards.length - 1].remove();
+  }, INJECT_MS);
+}
+
+function scheduleAutoRefresh(id) {
+  if (state[id].autoTimer) clearTimeout(state[id].autoTimer);
+  state[id].nextUpdate = Date.now() + AUTO_REFRESH_MS;
+  updateNextLabel(id);
+  state[id].autoTimer = setTimeout(() => { cacheTime = 0; loadSector(id, true); }, AUTO_REFRESH_MS);
+  if (state[id].tickTimer) clearInterval(state[id].tickTimer);
+  state[id].tickTimer = setInterval(() => updateNextLabel(id), 60000);
+}
+
+function updateNextLabel(id) {
+  const el = document.getElementById(`nextUpdate-${id}`);
+  if (!el || !state[id].nextUpdate) return;
+  const m = Math.max(0, Math.round((state[id].nextUpdate - Date.now()) / 60000));
+  el.textContent = `次回自動更新: 約${m}分後`;
+}
+
+function clearTimers(id) {
+  if (state[id].autoTimer) { clearTimeout(state[id].autoTimer);  state[id].autoTimer  = null; }
+  if (state[id].feedTimer) { clearInterval(state[id].feedTimer); state[id].feedTimer  = null; }
+  if (state[id].tickTimer) { clearInterval(state[id].tickTimer); state[id].tickTimer  = null; }
+}
+
+function updateStatus() {
+  document.getElementById('hdrStatus').textContent =
+    SECTORS.some(s => state[s.id].loading) ? 'FETCHING' : 'LIVE';
+}
+
+// ─── BTC（coindesk 完全無料API）──────────────────
+async function fetchBTC() {
+  try {
+    const r = await fetch('https://api.coindesk.com/v1/bpi/currentprice/USD.json');
+    const d = await r.json();
+    const v = '$' + Math.round(d.bpi.USD.rate_float).toLocaleString();
+    ['tk-btc','tk-btc2'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = v; });
+  } catch {}
+}
+
+// ─── Init ─────────────────────────────────────────
+buildUI();
+fetchBTC();
+setInterval(fetchBTC, 5 * 60 * 1000);
+
+loadSector(SECTORS[0].id);
+let delay = 2000;
+SECTORS.slice(1).forEach(sec => {
+  setTimeout(() => { if (!state[sec.id].loaded && !state[sec.id].loading) loadSector(sec.id); }, delay);
+  delay += 1800;
+});
+</script>
+</body>
+</html>
