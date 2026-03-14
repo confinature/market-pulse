@@ -1,6 +1,6 @@
 # 📈 MARKET//PULSE
 
-`https://confinature.github.io/market-pulse/` 
+https://confinature.github.io/market-pulse/
 
 日本株の9セクターに関するニュースを、国内15メディアのRSSから自動収集してタイムライン表示するWebアプリです。
 
@@ -15,7 +15,7 @@
 
 ### このサイトのURL
 
- `https://confinature.github.io/market-pulse/`
+ https://confinature.github.io/market-pulse/
 
 ---
 
